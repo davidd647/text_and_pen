@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:text_and_pen2/widgets/scribble_preview.dart';
 
 import '../providers/session_logic.dart';
+import '../models/note.dart';
 import '../helpers/get_full_height.dart';
 
 class Session extends StatefulWidget {
@@ -37,6 +39,28 @@ class _SessionState extends State<Session> {
     providerSessionLogic.updateDb();
   }
 
+  void _undoPreviousStroke() {
+    if (_strokes.isNotEmpty) _strokes.removeLast();
+    _endStroke('');
+    setState(() {});
+  }
+
+  void _clearPreviewStrokes() {
+    providerSessionLogic.clearCurrentPreview();
+    setState(() {});
+  }
+
+  void _navBack() {
+    Navigator.of(context).pop(); // Still go back afterward
+
+    Note tmpNote = providerSessionLogic.getNoteFromId(providerSessionLogic.selectedNoteId);
+
+    if (tmpNote.scribblePreviewStrokes.isEmpty && tmpNote.text == '' && _strokes.isEmpty) {
+      // delete the current note...
+      providerSessionLogic.deleteById(tmpNote.id);
+    }
+  }
+
   @override
   void initState() {
     providerSessionLogic = Provider.of<ProviderSessionLogic>(context, listen: false);
@@ -57,6 +81,12 @@ class _SessionState extends State<Session> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            _navBack();
+          },
+        ),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text('Text and Pen'),
         actions: [
@@ -142,6 +172,46 @@ class _SessionState extends State<Session> {
                 ),
               ),
             ),
+            Positioned(
+              bottom: 150,
+              right: 0,
+              child: GestureDetector(
+                onTap: () {
+                  _clearPreviewStrokes();
+                },
+                child: Container(
+                  width: 150,
+                  height: 25,
+                  alignment: Alignment.center,
+                  color: Colors.grey[300],
+                  child: Text('Clear Preview'),
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: 0,
+              right: 0,
+              child: ScribblePreview(
+                note: providerSessionLogic.getNoteFromId(providerSessionLogic.selectedNoteId),
+                yDimension: 150,
+              ),
+            ),
+            if (!providerSessionLogic.isKeyboardMode)
+              Positioned(
+                left: 50,
+                bottom: 50,
+                child: GestureDetector(
+                  onTap: () {
+                    _undoPreviousStroke();
+                  },
+                  child: Container(
+                    width: 100,
+                    height: 100,
+                    color: Colors.grey[300],
+                    child: Icon(Icons.undo, size: 50),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
