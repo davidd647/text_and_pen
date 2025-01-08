@@ -3,6 +3,17 @@ import 'package:intl/intl.dart'; // has the DateFormat class
 
 import '../databases/notes.dart';
 import '../models/note.dart';
+import '../screens/session.dart';
+
+final placeholderNote = Note(
+  id: -1,
+  dateCreated: '',
+  dateModified: '',
+  text: 'ERR - NO SUCH ID',
+  scribbles: '',
+  scribblePreview: '',
+  scribblePreviewStrokes: deserializeStrokes(''),
+);
 
 class ProviderSessionLogic with ChangeNotifier {
   List<Note> notesList = [];
@@ -18,6 +29,11 @@ class ProviderSessionLogic with ChangeNotifier {
     strokesJson = selectedNote.scribbles;
   }
 
+  deleteById(int id) async {
+    await DbNotes.deleteNote(id);
+    getNotesList();
+  }
+
   createNote() async {
     // reset on-screen values:
     textEditingController.text = '';
@@ -31,6 +47,8 @@ class ProviderSessionLogic with ChangeNotifier {
       dateModified: getDate(),
       text: '',
       scribbles: '',
+      scribblePreview: '',
+      scribblePreviewStrokes: deserializeStrokes(''),
     );
 
     // save to DB and get an ID for the note:
@@ -46,6 +64,8 @@ class ProviderSessionLogic with ChangeNotifier {
       dateModified: getDate(),
       text: textEditingController.text,
       scribbles: strokesJson,
+      scribblePreview: selectedNote.scribblePreview,
+      scribblePreviewStrokes: deserializeStrokes(selectedNote.scribblePreview),
     );
 
     await DbNotes.updateNote(updatedNote);
@@ -53,8 +73,39 @@ class ProviderSessionLogic with ChangeNotifier {
     getNotesList();
   }
 
+  updateDbNoteById(int id) async {
+    Note selectedNote = getNoteFromId(id);
+
+    Note updatedNote = Note(
+      id: selectedNote.id,
+      dateCreated: selectedNote.dateCreated,
+      dateModified: getDate(),
+      text: selectedNote.text,
+      scribbles: selectedNote.scribbles,
+      scribblePreview: selectedNote.scribblePreview,
+      scribblePreviewStrokes: deserializeStrokes(selectedNote.scribblePreview),
+    );
+
+    await DbNotes.updateNote(updatedNote);
+    getNotesList();
+    notifyListeners();
+  }
+
   getNotesList() async {
     notesList = await DbNotes.getNotesList();
+    notifyListeners();
+  }
+
+  clearCurrentPreview() async {
+    Note tmpNote = getNoteFromId(selectedNoteId);
+    int selectedIndex = getNoteIndexFromId(tmpNote.id);
+
+    notesList[selectedIndex].scribblePreviewStrokes = [];
+    notesList[selectedIndex].scribblePreview = serializeStrokes([]);
+
+    // UPDATE DB WHEN SCRIBBLE IS DONE
+    // updateDb();
+    await updateDbNoteById(tmpNote.id);
     notifyListeners();
   }
 
@@ -64,8 +115,13 @@ class ProviderSessionLogic with ChangeNotifier {
 
   Note getNoteFromId(int id) {
     int noteIndex = notesList.indexWhere((note) => note.id == id);
-    if (noteIndex < 0) return Note(id: -1, dateCreated: '', dateModified: '', text: 'ERR - NO SUCH ID', scribbles: '');
+    if (noteIndex < 0) return placeholderNote;
+
     return notesList[noteIndex];
+  }
+
+  int getNoteIndexFromId(int id) {
+    return notesList.indexWhere((note) => note.id == id);
   }
 
   String getDate() {
