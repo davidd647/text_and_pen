@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/session_logic.dart';
 import '../screens/session.dart';
 import '../models/note.dart';
+import '../widgets/scribble_preview.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -19,7 +20,10 @@ class _HomeState extends State<Home> {
   Future<void> addNote() async {
     // create a new note with today's date (today modified, today created)
     await providerSessionLogic.createNote();
-    providerSessionLogic.getNotesList();
+    await providerSessionLogic.getNotesList();
+
+    // Check if the widget is still in the tree
+    if (!mounted) return;
 
     // navigate to the note screen
     Navigator.of(context).pushNamed(Session.routeName);
@@ -56,15 +60,11 @@ class _HomeState extends State<Home> {
           alignment: WrapAlignment.center,
           children: [
             ...sortedNotes.map((note) {
-              String title = 'no text';
-              if (note.text.isNotEmpty) title = note.text.split('\n')[0];
               return SavedNote(
                 onTap: () {
                   navToNote(note);
                 },
-                title: title,
-                dateCreated: note.dateCreated,
-                dateModified: note.dateModified,
+                note: note,
                 width: fullWidth / 2,
               );
             }),
@@ -84,22 +84,22 @@ class SavedNote extends StatelessWidget {
   const SavedNote({
     super.key,
     required this.onTap,
-    required this.title,
-    required this.dateCreated,
-    required this.dateModified,
+    required this.note,
     required this.width,
   });
 
   final Function onTap;
-  final String title;
-  final String dateCreated;
-  final String dateModified;
+  final Note note;
+
   final double width;
 
   final yDimension = 150.0;
 
   @override
   Widget build(BuildContext context) {
+    String title = 'no text';
+    if (note.text.isNotEmpty) title = note.text.split('\n')[0];
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 10.0),
       child: SizedBox(
@@ -140,7 +140,7 @@ class SavedNote extends StatelessWidget {
                         Align(
                           alignment: Alignment.bottomRight,
                           child: Text(
-                            'Updated: $dateModified',
+                            'Updated: ${note.dateModified}',
                             style: TextStyle(
                               color: Colors.grey[600],
                               fontSize: 12,
@@ -153,17 +153,7 @@ class SavedNote extends StatelessWidget {
                 ),
               ),
             ),
-            Container(
-              color: Colors.grey[100],
-              alignment: Alignment.center,
-              width: yDimension,
-              height: yDimension,
-              child: Icon(
-                Icons.brush,
-                color: Colors.grey[300],
-                size: 50,
-              ),
-            ),
+            ScribblePreview(yDimension: yDimension, note: note),
           ],
         ),
       ),
