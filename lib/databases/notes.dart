@@ -1,10 +1,11 @@
 import 'package:sqflite/sqflite.dart' as sql;
 import 'package:sqflite/sqlite_api.dart';
 import 'package:path/path.dart' as path;
+import '../screens/session.dart';
 
 import '../models/note.dart';
 
-String dbName = 'text_and_pen_2025_01_07_v3';
+String dbName = 'text_and_pen_2025_01_08_v2';
 
 class DbNotes {
   static Future<Database> database() async {
@@ -15,6 +16,7 @@ class DbNotes {
     // required this.dateModified,
     // required this.text,
     // required this.scribbles,
+    // required this.scribblePreview,
 
     return sql.openDatabase(
       path.join(dbPath, '$dbName.db'),
@@ -26,7 +28,8 @@ class DbNotes {
               dateCreated TEXT,
               dateModified TEXT,
               text TEXT,
-              scribbles TEXT
+              scribbles TEXT,
+              scribblePreview TEXT
             )
             ''');
       },
@@ -48,6 +51,8 @@ class DbNotes {
         dateModified: rawNote['dateModified'],
         text: rawNote['text'],
         scribbles: rawNote['scribbles'],
+        scribblePreview: rawNote['scribblePreview'],
+        scribblePreviewStrokes: deserializeStrokes(rawNote['scribblePreview']),
       );
 
       notesList.add(newNote);
@@ -65,6 +70,7 @@ class DbNotes {
       'dateModified': note.dateModified,
       'text': note.text,
       'scribbles': note.scribbles,
+      'scribblePreview': note.scribblePreview,
     });
   }
 
@@ -79,6 +85,7 @@ class DbNotes {
         'dateModified': note.dateModified,
         'text': note.text,
         'scribbles': note.scribbles,
+        'scribblePreview': note.scribblePreview,
       },
       where: 'id == ?',
       whereArgs: [note.id],
@@ -86,4 +93,13 @@ class DbNotes {
   }
 
   // deleteNote(int ID)
+  static Future<int> deleteNote(int id) async {
+    final db = await DbNotes.database();
+
+    return db.delete(
+      dbName,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
 }
