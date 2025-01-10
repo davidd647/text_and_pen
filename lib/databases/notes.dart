@@ -5,7 +5,7 @@ import '../screens/session.dart';
 
 import '../models/note.dart';
 
-String dbName = 'text_and_pen_2025_01_08_v2';
+String dbName = 'text_and_pen_2025_01_09';
 
 class DbNotes {
   static Future<Database> database() async {
@@ -42,6 +42,8 @@ class DbNotes {
     List<Map<String, dynamic>> rawNotesList;
     final List<Note> notesList = [];
 
+    print('(TO-DO) somehow reduce the amount of data being pulled from this query method...');
+    print('(it will crash with moderately complex drawings because a row gets too long...)');
     rawNotesList = await db.query(dbName, orderBy: 'dateModified DESC');
 
     for (var rawNote in rawNotesList) {
