@@ -6,7 +6,7 @@ import './providers/session_logic.dart';
 import './screens/session.dart';
 import './screens/home.dart';
 
-const appName = 'Speaking Flashcards';
+const appName = 'Text and Pen';
 
 void main() {
   runApp(const MyApp());
